@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cửa Hàng Thực Phẩm Dinh Dưỡng Cao Cấp</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow: hidden; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+    <header class="bg-emerald-700 text-white shadow-md sticky top-0 z-40">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wide">🌱 NUTRI-HEALTH</h1>
+            <div class="relative cursor-pointer" onclick="toggleCartModal()">
+                <span class="text-3xl">🛒</span>
+                <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="bg-emerald-50 py-12 text-center border-b border-emerald-100">
+        <h2 class="text-3xl font-extrabold text-emerald-950 sm:text-4xl">Thực Phẩm Dinh Dưỡng Thiên Nhiên</h2>
+        <p class="mt-4 text-lg text-emerald-700">Sâm Cao Ly, Yến Sào Khánh Hòa, Bổ Não & Vitamin chính hãng</p>
+    </div>
+
+    <main class="container mx-auto px-4 py-8">
+        <div id="product-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            </div>
+
+        <div class="flex justify-center items-center mt-12 gap-4">
+            <button id="btn-prev" onclick="changePage(-1)" class="px-4 py-2 bg-emerald-600 text-white rounded-lg disabled:opacity-50 font-medium hover:bg-emerald-700 transition">Trang trước</button>
+            <span id="page-info" class="text-lg font-semibold text-gray-700">Trang 1 / 10</span>
+            <button id="btn-next" onclick="changePage(1)" class="px-4 py-2 bg-emerald-600 text-white rounded-lg disabled:opacity-50 font-medium hover:bg-emerald-700 transition">Trang sau</button>
+        </div>
+    </main>
+
+    <div id="cart-modal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" onclick="toggleCartModal()"></div>
+        
+        <div class="modal-container bg-white w-full max-w-lg mx-auto rounded-xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] p-6 m-4">
+            <div class="flex justify-between items-center pb-4 border-b border-gray-200">
+                <p class="text-2xl font-bold text-emerald-800">🛒 Đơn Hàng Của Bạn</p>
+                <div class="modal-close cursor-pointer z-50" onclick="toggleCartModal()">
+                    <span class="text-2xl font-semibold">&times;</span>
+                </div>
+            </div>
+
+            <div id="cart-items" class="my-4 divide-y divide-gray-100">
+                </div>
+
+            <div class="text-right font-bold text-xl text-red-600 mb-6">
+                Tổng cộng: <span id="cart-total">0</span>đ
+            </div>
+
+            <form id="orderForm" onsubmit="handleOrderSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Họ và tên *</label>
+                    <input type="text" id="cust_name" required class="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Số điện thoại *</label>
+                    <input type="tel" id="cust_phone" required class="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Địa chỉ giao hàng *</label>
+                    <textarea id="cust_address" required rows="2" class="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center my-4">
+                    <p class="font-semibold text-gray-700 mb-2">Quét mã QR để thanh toán chuyển khoản:</p>
+                    <img src="https://via.placeholder.com/250x250.png?text=QR+Code+Cua+Ban" alt="Mã QR Thanh Toán" class="mx-auto border-2 border-white shadow-md rounded-md max-w-[200px]">
+                    <p class="text-xs text-gray-500 mt-2">Nội dung chuyển khoản: <span class="font-bold text-emerald-700">[Họ Tên] + [SĐT]</span></p>
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md">
+                    XÁC NHẬN ĐẶT HÀNG
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 1. KHỞI TẠO MẢNG MẪU 50 SẢN PHẨM (Chia làm 3 nhóm chính: Sâm, Yến, Bổ Não)
+        const products = [];
+        const categories = ["Nhân Sâm Hàn Quốc", "Yến Sào Thiên Nhiên", "Bổ Não & Tăng Trí Nhớ"];
+        const imgs = [
+            "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400", // Demo sâm/thuốc
+            "https://images.unsplash.com/photo-1611070973770-b1a672610041?w=400", // Demo lọ yến/nước
+            "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400"  // Bổ não
+        ];
+
+        for (let i = 1; i <= 50; i++) {
+            let catIndex = (i % 3);
+            let price = 200000 + (i * 15000); // Giá ngẫu nhiên tăng dần
+            products.push({
+                id: i,
+                name: `${categories[catIndex]} Cao Cấp Loại ${i}`,
+                category: categories[catIndex],
+                price: price,
+                image: imgs[catIndex],
+                desc: `Sản phẩm dinh dưỡng thượng hạng bổ sung sức khỏe dòng số ${i}.`
+            });
+        }
+
+        // 2. CẤU HÌNH PHÂN TRANG VÀ GIỎ HÀNG
+        let currentPage = 1;
+        const itemsPerPage = 5;
+        let cart = {};
+
+        function renderProducts() {
+            const container = document.getElementById("product-container");
+            container.innerHTML = "";
+
+            let startIndex = (currentPage - 1) * itemsPerPage;
+            let endIndex = startIndex + itemsPerPage;
+            let pageProducts = products.slice(startIndex, endIndex);
+
+            pageProducts.forEach(prod => {
+                container.innerHTML += `
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition duration-300 flex flex-col justify-between border border-gray-100">
+                        <img src="${prod.image}" alt="${prod.name}" class="h-40 w-full object-cover">
+                        <div class="p-4 flex-1 flex flex-col justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-emerald-600 uppercase tracking-wide">${prod.category}</span>
+                                <h3 class="font-bold text-gray-900 mt-1 text-sm line-clamp-2">${prod.name}</h3>
+                                <p class="text-xs text-gray-500 mt-1 line-clamp-2">${prod.desc}</p>
+                            </div>
+                            <div class="mt-4">
+                                <span class="text-base font-extrabold text-red-500">${prod.price.toLocaleString('vi-VN')}đ</span>
+                                <button onclick="addToCart(${prod.id})" class="w-full mt-2 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 font-semibold py-1.5 px-3 rounded-lg border border-emerald-200 text-xs transition duration-200">
+                                    + Thêm vào giỏ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Cập nhật giao diện thanh phân trang
+            document.getElementById("page-info").innerText = `Trang ${currentPage} / ${Math.ceil(products.length / itemsPerPage)}`;
+            document.getElementById("btn-prev").disabled = currentPage === 1;
+            document.getElementById("btn-next").disabled = currentPage === Math.ceil(products.length / itemsPerPage);
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            renderProducts();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 3. LOGIC GIỎ HÀNG
+        function addToCart(id) {
+            if (cart[id]) {
+                cart[id]++;
+            } else {
+                cart[id] = 1;
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            let totalItems = 0;
+            let totalPrice = 0;
+            const cartItemsContainer = document.getElementById("cart-items");
+            cartItemsContainer.innerHTML = "";
+
+            for (let id in cart) {
+                let prod = products.find(p => p.id == id);
+                let qty = cart[id];
+                totalItems += qty;
+                totalPrice += prod.price * qty;
+
+                cartItemsContainer.innerHTML += `
+                    <div class="flex justify-between items-center py-2 text-sm">
+                        <div class="max-w-[70%]">
+                            <p class="font-semibold text-gray-800">${prod.name}</p>
+                            <p class="text-gray-500 text-xs">${prod.price.toLocaleString('vi-VN')}đ x ${qty}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeQty(${id}, -1)" class="w-6 h-6 bg-gray-200 text-gray-700 rounded flex items-center justify-center font-bold">-</button>
+                            <span class="font-semibold">${qty}</span>
+                            <button onclick="changeQty(${id}, 1)" class="w-6 h-6 bg-gray-200 text-gray-700 rounded flex items-center justify-center font-bold">+</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById("cart-count").innerText = totalItems;
+            document.getElementById("cart-total").innerText = totalPrice.toLocaleString('vi-VN');
+            
+            if(totalItems === 0) {
+                cartItemsContainer.innerHTML = `<p class="text-center text-gray-400 my-4">Giỏ hàng đang trống</p>`;
+            }
+        }
+
+        function changeQty(id, delta) {
+            cart[id] += delta;
+            if (cart[id] <= 0) delete cart[id];
+            updateCartUI();
+        }
+
+        function toggleCartModal() {
+            const body = document.querySelector('body');
+            const modal = document.getElementById('cart-modal');
+            modal.classList.toggle('opacity-0');
+            modal.classList.toggle('pointer-events-none');
+            body.classList.toggle('modal-active');
+        }
+
+        // 4. ĐỒNG BỘ ĐẶT HÀNG QUA GOOGLE FORM
+        function handleOrderSubmit(event) {
+            event.preventDefault();
+
+            if (Object.keys(cart).length === 0) {
+                alert("Giỏ hàng của bạn đang trống. Vui lòng thêm món trước khi đặt!");
+                return;
+            }
+
+            // Tạo chuỗi thông tin chi tiết đơn hàng để nạp vào Form
+            let orderDetails = "";
+            let totalPrice = 0;
+            for (let id in cart) {
+                let prod = products.find(p => p.id == id);
+                orderDetails += `- ${prod.name} (SL: ${cart[id]})\n`;
+                totalPrice += prod.price * cart[id];
+            }
+            orderDetails += `Tổng tiền thanh toán: ${totalPrice.toLocaleString('vi-VN')}đ`;
+
+            const name = document.getElementById("cust_name").value;
+            const phone = document.getElementById("cust_phone").value;
+            const address = document.getElementById("cust_address").value;
+
+            // --- BƯỚC CẤU HÌNH LIÊN KẾT GOOGLE FORM ---
+            // Thay thế URL này bằng URL "formResponse" của bạn (Xem hướng dẫn chi tiết ở Bước 3 bên dưới)
+            const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSXXXXXXXXXXXX/formResponse"; 
+            
+            // Tạo FormData tương ứng với các entry ID của Google Form
+            const formData = new FormData();
+            formData.append("entry.1111111111", name);       // Thay số bằng ID của trường Họ và Tên
+            formData.append("entry.2222222222", phone);      // Thay số bằng ID của trường Số Điện Thoại
+            formData.append("entry.3333333333", address);    // Thay số bằng ID của trường Địa chỉ
+            formData.append("entry.4444444444", orderDetails); // Thay số bằng ID của trường Chi tiết đơn hàng
+
+            // Gửi bất đồng bộ lên Google Form (Sử dụng chế độ 'no-cors' để tránh lỗi chặn bảo mật của trình duyệt)
+            fetch(GOOGLE_FORM_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: formData
+            }).then(() => {
+                alert("🎉 Đặt hàng thành công! Đơn hàng đã được ghi nhận hệ thống.");
+                cart = {}; // Xóa sạch giỏ hàng
+                updateCartUI();
+                toggleCartModal();
+                document.getElementById("orderForm").reset();
+            }).catch(error => {
+                console.error("Lỗi:", error);
+                alert("Có lỗi xảy ra, vui lòng thử lại!");
+            });
+        }
+
+        // Chạy khởi tạo sản phẩm khi trang web tải xong
+        window.onload = renderProducts;
+    </script>
+</body>
+</html>
